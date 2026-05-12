@@ -26,7 +26,12 @@ const userSchema = new mongoose.Schema({
         enum : ['user','admin'],
         default: 'user'
     },
-    favoriteGenres:[String]
+    favoriteGenres:[String],
+
+    watched:   [{ type: mongoose.Schema.Types.ObjectId, ref: 'Movie' }],
+    watchlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Movie' }],
+    favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Movie' }],
+
 },{
     timestamps : true
 })

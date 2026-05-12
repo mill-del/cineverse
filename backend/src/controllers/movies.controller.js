@@ -1,4 +1,6 @@
 const Movie = require("../models/Movie.model");
+const User = require("../models/User.model");
+
 //----------------------------------------
 const getMovies = async (req, res) => {
   try {
@@ -62,4 +64,34 @@ const deleteMovie = async (req, res) => {
   }
 };
 
-module.exports = { getMovies, getMovieById, createMovie, deleteMovie,updateMovie};
+const toggleList = async (req, res) => {
+  try {
+    const { list, action } = req.body;
+    const movieId = req.params.id;
+    const userId = req.user.id;
+
+    if (!['watched', 'watchlist', 'favorites'].includes(list)) {
+      return res.status(400).json({ message: 'Invalid list' });
+    }
+
+    const update = action === 'add'
+        ? { $addToSet: { [list]: movieId } }
+        : { $pull:     { [list]: movieId } };
+
+    const user = await User.findByIdAndUpdate(userId, update, { new: true })
+        .select('-password')
+        .populate('watched',   'title year poster')
+        .populate('watchlist', 'title year poster')
+        .populate('favorites', 'title year poster');
+
+    return res.status(200).json({
+      watched:   user.watched,
+      watchlist: user.watchlist,
+      favorites: user.favorites
+    });
+  } catch (error) {
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+module.exports = { getMovies, getMovieById, createMovie, deleteMovie,updateMovie, toggleList };

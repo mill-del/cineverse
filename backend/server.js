@@ -13,12 +13,21 @@ const { initVoteSocket } = require("./src/websocket/voteSocket");
 const uploadHandler = require("./src/routes/upload.routes");
 require('dotenv').config();
 
+const cors = require('cors');
+
+
+
 const PORT = process.env.PORT
 
 connectDB();
 initVoteSocket(server);
 
 app.use(express.json());
+
+app.use(cors({
+  origin: 'http://localhost:3000'
+}));
+
 app.use("/api/auth", authRoutes);
 app.use("/api/movies", movieRoutes);
 app.use("/api/movies", reviewRoutes);
