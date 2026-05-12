@@ -2,8 +2,12 @@ const User = require("../models/User.model");
 
 const getProfile = async (req, res) => {
   try {
-    const id = req.user.id;
-    const user = await User.findById(id).select("-password");
+    const user = await User.findById(req.user.id)
+        .select('-password')
+        .populate('watched',   'title year poster')
+        .populate('watchlist', 'title year poster')
+        .populate('favorites', 'title year poster');
+
     return res.status(200).json({ user });
   } catch (error) {
     return res.status(500).json({ message: error.message });
@@ -12,11 +16,13 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const id = req.user.id;
-    const profile = await User.findByIdAndUpdate(id, req.body, {
-      new: true,
-    }).select("-password");
-    if (!profile) return res.status(500).json({ message: "profile not found" });
+    const { username, bio, favoriteGenres } = req.body; // ← только нужные поля
+    const profile = await User.findByIdAndUpdate(
+        req.user.id,
+        { username, bio, favoriteGenres },
+        { new: true }
+    ).select('-password');
+    if (!profile) return res.status(404).json({ message: 'User not found' });
     return res.status(200).json({ profile });
   } catch (error) {
     return res.status(500).json({ message: error.message });

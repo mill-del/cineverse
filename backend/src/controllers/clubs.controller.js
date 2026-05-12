@@ -12,7 +12,9 @@ const getClubs = async (req, res) => {
 const getClubById = async (req, res) => {
   try {
     const clubId = req.params.id;
-    const club = await Club.findById(clubId);
+    const club = await Club.findById(clubId)
+        .populate('members', 'username avatar')
+        .populate('creatorId', 'username');
     if (!club) return res.status(404).json({ message: "Not Found" });
     return res.status(200).json(club);
   } catch (error) {
