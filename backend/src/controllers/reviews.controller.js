@@ -4,7 +4,10 @@ const Review = require("../models/Review.model");
 const getReviewsByMovie = async (req, res) => {
   try {
     const movieId = req.params.movieId;
-    const review = await Review.find({ movieId });
+
+    const review = await Review.find({ movieId })
+        .populate('userId', 'username avatar')
+
     if (!review) return res.status(404).json({ message: "Review not found" });
     return res.status(200).json(review);
   } catch (error) {
@@ -24,7 +27,10 @@ const createReview = async (req, res) => {
       userId,
       movieId,
     });
-    return res.status(201).json(review);
+
+    const populated = await review.populate('userId', 'username avatar');
+    return res.status(201).json(populated);
+
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

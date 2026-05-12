@@ -10,9 +10,14 @@ const clubSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    cover: {
+    theme: {
+        type: String,
+    },
+    coverUrl: {
       type: String,
     },
+
+
     creatorId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -24,10 +29,10 @@ const clubSchema = new mongoose.Schema(
         ref: "User",
       },
     ],
-    pinnedMovie: {
+    pinnedMovies:[{
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Movie"
-    },
+      ref: "Movie",
+    }],
   },
   {
     timestamps: true,

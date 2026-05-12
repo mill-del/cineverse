@@ -19,20 +19,18 @@ export default function ProfilePage() {
             headers: { Authorization: `Bearer ${token}` }
         })
             .then(r => r.json())
-            .then(data => setUser(data.user))
-            .catch(() => {});
-
-        // Подтягиваем клубы пользователя
-        fetch(`${API_URL}/api/clubs`, {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-            .then(r => r.json())
             .then(data => {
-                const stored = localStorage.getItem('user');
-                const me = stored ? JSON.parse(stored) : null;
-                if (!me) return;
-                const all = Array.isArray(data) ? data : data.clubs || [];
-                setClubs(all.filter(c => c.members?.some(m => m === me._id || m?._id === me._id)));
+                const me = data.user;
+                setUser(me);
+
+                return fetch(`${API_URL}/api/clubs`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                    .then(r => r.json())
+                    .then(clubsData => {
+                        const all = Array.isArray(clubsData) ? clubsData : clubsData.clubs || [];
+                        setClubs(all.filter(c => c.members?.some(m => m === me._id || m?._id === me._id)));
+                    });
             })
             .catch(() => {});
     }, []);
@@ -144,14 +142,12 @@ export default function ProfilePage() {
                         </div>
                     </div>
 
-                    {/* ACTIONS */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignSelf: 'flex-start' }}>
                         <a href="/profile/edit" className="btn btn-outline">Edit profile</a>
                         <button onClick={handleLogout} className="btn btn-ghost">Logout</button>
                     </div>
                 </div>
 
-                {/* Poster strip */}
                 {bgPosters.length > 0 && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', alignSelf: 'center' }}>
                         {bgPosters.slice(0, 3).map((m, i) => (
