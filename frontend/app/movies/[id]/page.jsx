@@ -14,6 +14,7 @@ export default function MoviePage() {
     const [reviewText, setReviewText] = useState('');
     const [reviewRating, setReviewRating] = useState(8);
     const [submitting, setSubmitting] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState(null);
 
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
@@ -23,18 +24,42 @@ export default function MoviePage() {
             .then(data => { setMovie(data); setLoading(false); })
             .catch(() => setLoading(false));
 
+        fetch(`${API_URL}/api/movies/${id}/reviews`)
+            .then(r => r.json())
+            .then(data => {
+                setMovie(prev => ({ ...prev, reviews: Array.isArray(data) ? data : data.reviews || [] }));
+            })
+            .catch(() => {});
+
         if (token) {
             fetch(`${API_URL}/api/users/me`, {
                 headers: { Authorization: `Bearer ${token}` }
             })
                 .then(r => r.json())
                 .then(data => setUserLists({
-                    watched: data.watched || [],
-                    watchlist: data.watchlist || [],
-                    favorites: data.favorites || []
+                    watched: data.user?.watched || data.watched || [],
+                    watchlist: data.user?.watchlist || data.watchlist || [],
+                    favorites: data.user?.favorites || data.favorites || []
                 }))
                 .catch(() => {});
         }
+
+        if (token) {
+            fetch(`${API_URL}/api/users/me`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+                .then(r => r.json())
+                .then(data => {
+                    setUserLists({
+                        watched: data.user?.watched || data.watched || [],
+                        watchlist: data.user?.watchlist || data.watchlist || [],
+                        favorites: data.user?.favorites || data.favorites || []
+                    });
+                    setCurrentUserId(data.user?._id || data._id);
+                })
+                .catch(() => {});
+        }
+
     }, [id]);
 
     const isInList = (list) => userLists[list]?.some(m => m === id || m?._id === id);
@@ -60,8 +85,8 @@ export default function MoviePage() {
         const res = await fetch(`${API_URL}/api/movies/${id}/reviews`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ rating: reviewRating, text: reviewText })
-        });
+            body: JSON.stringify({ score: reviewRating, text: reviewText })
+        })
         const data = await res.json();
         if (res.ok) {
             setMovie(prev => ({ ...prev, reviews: [data, ...(prev.reviews || [])] }));
@@ -91,8 +116,8 @@ export default function MoviePage() {
                     <h1>{movie.title}</h1>
 
                     <div className="movie-detail-meta">
-                        {movie.rating > 0 && (
-                            <span className="movie-detail-rating">★ {movie.rating.toFixed(1)}</span>
+                        {(movie.rating || movie.score) > 0 && (
+                            <span className="movie-detail-rating">★ {(movie.rating || movie.score)?.toFixed(1)}</span>
                         )}
                         {movie.director && <span>Dir. {movie.director}</span>}
                     </div>
@@ -180,22 +205,60 @@ export default function MoviePage() {
                     </form>
                 )}
 
-                {movie.reviews?.length > 0 ? (
-                    movie.reviews.map(r => (
-                        <div key={r._id} className="review">
-                            <div className="review-header">
-                                <div className="review-author">
-                                    <div className="review-avatar">{r.userId?.username?.[0]?.toUpperCase() || '?'}</div>
-                                    <div className="review-name">{r.userId?.username || 'Anonymous'}</div>
-                                </div>
-                                <div className="review-rating">★ {r.rating}/10</div>
+                {movie.reviews?.map(r => (
+                    <div key={r._id} className="review">
+                        <div className="review-header">
+                            <div className="review-author">
+                                <div className="review-avatar">{r.userId?.username?.[0]?.toUpperCase() || '?'}</div>
+                                <div className="review-name">{r.userId?.username || 'Anonymous'}</div>
                             </div>
-                            <p className="review-text">{r.text}</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <div className="review-rating">★ {r.score}/10</div>
+                                {currentUserId && String(r.userId?._id ?? r.userId) === String(currentUserId) && (
+                                    <button
+                                        onClick={async () => {
+                                            const token = localStorage.getItem('token');
+                                            const res = await fetch(`${API_URL}/api/reviews/${r._id}`, {
+                                                method: 'DELETE',
+                                                headers: {Authorization: `Bearer ${token}`}
+                                            });
+                                            if (res.ok) {
+                                                setMovie(prev => ({
+                                                    ...prev,
+                                                    reviews: prev.reviews.filter(x => x._id !== r._id)
+                                                }));
+                                            }
+                                        }}
+                                        style={{
+                                            background: 'none',
+                                            border: '1px solid rgba(255,255,255,0.15)',
+                                            color: 'var(--text-muted)',
+                                            cursor: 'pointer',
+                                            fontSize: '0.85rem',
+                                            borderRadius: '6px',
+                                            padding: '4px 8px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            transition: 'all 0.2s'
+                                        }}
+                                        onMouseEnter={e => {
+                                            e.currentTarget.style.borderColor = '#e53e3e';
+                                            e.currentTarget.style.color = '#e53e3e';
+                                        }}
+                                        onMouseLeave={e => {
+                                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)';
+                                            e.currentTarget.style.color = 'var(--text-muted)';
+                                        }}
+                                    >
+                                        🗑
+                                    </button>
+                                )}
+                            </div>
                         </div>
-                    ))
-                ) : (
-                    <p className="empty-state">No reviews yet. Be the first to share your thoughts.</p>
-                )}
+                        <p className="review-text">{r.text}</p>
+                    </div>
+                ))}
             </div>
         </div>
     );

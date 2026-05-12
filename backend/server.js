@@ -12,6 +12,7 @@ const userRoutes = require("./src/routes/users.routes");
 const { initVoteSocket } = require("./src/websocket/voteSocket");
 const uploadHandler = require("./src/routes/upload.routes");
 require('dotenv').config();
+const authMiddleware = require('./src/middleware/auth.middleware')
 
 const cors = require('cors');
 
@@ -31,6 +32,7 @@ app.use(cors({
 app.use("/api/auth", authRoutes);
 app.use("/api/movies", movieRoutes);
 app.use("/api/movies", reviewRoutes);
+app.use("/api/reviews", reviewRoutes);
 app.use("/api/clubs", clubRoutes);
 app.use("/api/votes", voteRoutes);
 app.use("/api/uploadthing", uploadHandler);
