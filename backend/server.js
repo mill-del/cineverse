@@ -13,7 +13,7 @@ const { initVoteSocket } = require("./src/websocket/voteSocket");
 const uploadHandler = require("./src/routes/upload.routes");
 require('dotenv').config();
 const authMiddleware = require('./src/middleware/auth.middleware')
-
+const postRoutes = require("./src/routes/posts.routes");
 const cors = require('cors');
 
 
@@ -36,7 +36,9 @@ app.use("/api/reviews", reviewRoutes);
 app.use("/api/clubs", clubRoutes);
 app.use("/api/votes", voteRoutes);
 app.use("/api/uploadthing", uploadHandler);
-app.use("/api/users", userRoutes)  
+app.use("/api/users", userRoutes)
+app.use("/api/posts", postRoutes);
+
 
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

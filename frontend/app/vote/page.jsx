@@ -11,13 +11,29 @@ export default function VotePage() {
     const [movies, setMovies] = useState([]);
     const [search, setSearch] = useState('');
     const [showPicker, setShowPicker] = useState(false);
+    const [myVotedMovieId, setMyVotedMovieId] = useState(null);
+    const [voting, setVoting] = useState(false);
     const wsRef = useRef(null);
 
     useEffect(() => {
+        const token = localStorage.getItem('token');
+
         fetch(`${API_URL}/api/votes/current`)
             .then(r => r.json())
             .then(data => { if (data.results) setResults(data.results); })
             .catch(() => {});
+
+        // Получаем свой текущий голос
+        if (token) {
+            fetch(`${API_URL}/api/votes/my`, {
+                headers: { Authorization: `Bearer ${token}` }
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.movieId) setMyVotedMovieId(String(data.movieId));
+                })
+                .catch(() => {});
+        }
 
         fetch(`${API_URL}/api/movies`)
             .then(r => r.json())
@@ -32,7 +48,7 @@ export default function VotePage() {
                     const msg = JSON.parse(event.data);
                     if (msg.type === 'online') setOnline(msg.count);
                     if (msg.type === 'results') {
-                        if (msg.votes) setResults(msg.votes);
+                        if (msg.results) setResults(msg.results);
                         if (typeof msg.online === 'number') setOnline(msg.online);
                     }
                 } catch {}
@@ -44,19 +60,29 @@ export default function VotePage() {
     const handleVote = async (movieId) => {
         const token = localStorage.getItem('token');
         if (!token) { window.location.href = '/login'; return; }
+        if (voting) return;
+
+        // Если уже голосовал за этот фильм — ничего не делаем
+        if (myVotedMovieId === String(movieId)) return;
+
+        setVoting(true);
         const res = await fetch(`${API_URL}/api/votes`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify({ movieId })
         });
         const data = await res.json();
-        if (!res.ok) alert(data.message || 'Could not vote');
-        else {
+        if (!res.ok) {
+            alert(data.message || 'Could not vote');
+        } else {
+            setMyVotedMovieId(String(movieId));
             setShowPicker(false);
+            // Результаты придут через WebSocket, но на всякий случай fetch
             fetch(`${API_URL}/api/votes/current`)
                 .then(r => r.json())
                 .then(data => { if (data.results) setResults(data.results); });
         }
+        setVoting(false);
     };
 
     const maxCount = Math.max(...results.map(r => r.count || 0), 1);
@@ -81,9 +107,14 @@ export default function VotePage() {
                             {online} {online === 1 ? 'person' : 'people'} voting now
                         </div>
                         <button className="btn btn-primary" onClick={() => setShowPicker(v => !v)}>
-                            {showPicker ? 'Close' : '+ Nominate a film'}
+                            {showPicker ? 'Close' : myVotedMovieId ? '↻ Change vote' : '+ Nominate a film'}
                         </button>
                     </div>
+                    {myVotedMovieId && (
+                        <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                            ✓ You voted this week — you can change your vote
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -91,7 +122,14 @@ export default function VotePage() {
             {showPicker && (
                 <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '2rem', marginBottom: '2rem' }}>
                     <div style={{ marginBottom: '1.5rem' }}>
-                        <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '1rem' }}>Choose a film to nominate</h3>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 600, marginBottom: '0.5rem' }}>
+                            {myVotedMovieId ? 'Change your vote' : 'Choose a film to nominate'}
+                        </h3>
+                        {myVotedMovieId && (
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                                Your current vote will be replaced.
+                            </p>
+                        )}
                         <input
                             type="text"
                             className="search-input"
@@ -102,22 +140,52 @@ export default function VotePage() {
                         />
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '1rem', maxHeight: '400px', overflowY: 'auto' }}>
-                        {filtered.slice(0, 40).map(movie => (
-                            <div
-                                key={movie._id}
-                                onClick={() => handleVote(movie._id)}
-                                style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
-                                onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-                                onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-                            >
-                                <div style={{ aspectRatio: '2/3', borderRadius: '8px', overflow: 'hidden', background: 'var(--bg-hover)', marginBottom: '0.5rem', border: '1px solid var(--border)' }}>
-                                    {movie.poster && <img src={movie.poster} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                        {filtered.slice(0, 40).map(movie => {
+                            const isMyVote = myVotedMovieId === String(movie._id);
+                            return (
+                                <div
+                                    key={movie._id}
+                                    onClick={() => handleVote(movie._id)}
+                                    style={{
+                                        cursor: isMyVote ? 'default' : 'pointer',
+                                        transition: 'transform 0.2s',
+                                        position: 'relative',
+                                        opacity: isMyVote ? 0.7 : 1
+                                    }}
+                                    onMouseEnter={e => { if (!isMyVote) e.currentTarget.style.transform = 'translateY(-4px)'; }}
+                                    onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
+                                >
+                                    <div style={{
+                                        aspectRatio: '2/3', borderRadius: '8px', overflow: 'hidden',
+                                        background: 'var(--bg-hover)', marginBottom: '0.5rem',
+                                        border: `1px solid ${isMyVote ? 'var(--accent)' : 'var(--border)'}`,
+                                        position: 'relative'
+                                    }}>
+                                        {movie.poster && <img src={movie.poster} alt={movie.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+                                        {isMyVote && (
+                                            <div style={{
+                                                position: 'absolute', inset: 0,
+                                                background: 'rgba(232,197,71,0.2)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                            }}>
+                                                <div style={{
+                                                    background: 'var(--accent)', color: 'var(--bg)',
+                                                    borderRadius: '50%', width: 32, height: 32,
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    fontSize: '1rem', fontWeight: 700
+                                                }}>✓</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', fontWeight: 500, lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                                        {movie.title}
+                                    </div>
+                                    {isMyVote && (
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--accent)', marginTop: '0.2rem' }}>Your vote</div>
+                                    )}
                                 </div>
-                                <div style={{ fontSize: '0.8rem', fontWeight: 500, lineHeight: 1.3, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
-                                    {movie.title}
-                                </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             )}
@@ -136,22 +204,48 @@ export default function VotePage() {
                         {results.map((r, i) => {
                             const movie = r.movieId || r;
                             const count = r.count || 0;
+                            const isMyVote = myVotedMovieId === String(movie._id);
                             return (
-                                <div key={movie._id || i} className="vote-item">
+                                <div key={movie._id || i} className="vote-item" style={{
+                                    border: isMyVote ? '1px solid rgba(232,197,71,0.4)' : '1px solid var(--border)',
+                                    background: isMyVote ? 'rgba(232,197,71,0.04)' : undefined,
+                                    borderRadius: 'var(--radius)',
+                                    marginBottom: '0.75rem',
+                                    padding: '1rem',
+                                }}>
                                     <div className="vote-rank" style={{ color: i === 0 ? 'var(--accent)' : 'var(--text-muted)' }}>
                                         #{i + 1}
                                     </div>
                                     <img className="vote-poster" src={movie.poster || ''} alt={movie.title} />
-                                    <div>
-                                        <div className="vote-title">{movie.title}</div>
+                                    <div style={{ flex: 1 }}>
+                                        <div className="vote-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            {movie.title}
+                                            {isMyVote && (
+                                                <span style={{
+                                                    fontSize: '0.65rem', fontWeight: 600,
+                                                    color: 'var(--accent)', background: 'rgba(232,197,71,0.15)',
+                                                    border: '1px solid rgba(232,197,71,0.3)',
+                                                    padding: '0.15rem 0.5rem', borderRadius: '100px',
+                                                    letterSpacing: '0.05em'
+                                                }}>YOUR VOTE</span>
+                                            )}
+                                        </div>
                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>{movie.year}</div>
                                     </div>
                                     <div className="vote-bar-wrap">
-                                        <div className="vote-bar" style={{ width: `${(count / maxCount) * 100}%` }} />
+                                        <div className="vote-bar" style={{
+                                            width: `${(count / maxCount) * 100}%`,
+                                            background: isMyVote ? 'var(--accent)' : undefined
+                                        }} />
                                     </div>
                                     <div className="vote-count-small">{count}</div>
-                                    <button className="btn btn-outline" onClick={() => handleVote(movie._id)} style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>
-                                        Vote
+                                    <button
+                                        className={`btn ${isMyVote ? 'btn-primary' : 'btn-outline'}`}
+                                        onClick={() => isMyVote ? null : handleVote(movie._id)}
+                                        disabled={isMyVote || voting}
+                                        style={{ padding: '0.5rem 1rem', fontSize: '0.85rem', opacity: isMyVote ? 0.6 : 1 }}
+                                    >
+                                        {isMyVote ? '✓ Voted' : 'Vote'}
                                     </button>
                                 </div>
                             );
