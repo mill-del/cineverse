@@ -66,8 +66,28 @@ const broadcastOnlineCount = () => {
 const broadcastResults = async () => {
   const week = getCurrentWeek();
   const year = getCurrentYear();
-  const votes = await Vote.find({ week, year });
-  const data = JSON.stringify({ type: "results", votes, online: voteClients.size });
+
+  const votes = await Vote.find({ week, year })
+      .populate('movieId', 'title poster year');
+
+  const map = new Map();
+  votes.forEach(v => {
+    const id = String(v.movieId?._id || v.movieId);
+    if (!map.has(id)) {
+      map.set(id, { movieId: v.movieId, count: 0 });
+    }
+    map.get(id).count++;
+  });
+
+  const results = Array.from(map.values())
+      .sort((a, b) => b.count - a.count);
+
+  const data = JSON.stringify({
+    type: "results",
+    results,
+    online: voteClients.size
+  });
+
   voteClients.forEach(client => {
     try { client.send(data); } catch {}
   });
