@@ -1036,14 +1036,6 @@ button {
     padding: 0 1.25rem;
   }
 
-  .navbar-links {
-    gap: 1rem;
-  }
-
-  .navbar-links a:not(.btn-login) {
-    display: none;
-  }
-
   .main-content {
     padding: 2rem 1.25rem 4rem;
   }
@@ -1117,4 +1109,48 @@ button {
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.05;
+}
+
+
+.navbar-burger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.navbar-burger span {
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: all 0.2s;
+}
+
+@media (max-width: 768px) {
+  .navbar-burger {
+    display: flex;
+  }
+
+  .navbar-links {
+    display: none;
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    flex-direction: column;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    gap: 1rem;
+    z-index: 100;
+  }
+
+  .navbar-links--open {
+    display: flex;
+  }
 }

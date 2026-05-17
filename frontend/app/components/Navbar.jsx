@@ -4,20 +4,16 @@ import { useEffect, useState } from 'react';
 
 export default function Navbar() {
     const [user, setUser] = useState(null);
+    const [menuOpen, setMenuOpen] = useState(false);
 
     useEffect(() => {
         const syncUser = () => {
             const stored = localStorage.getItem('user');
             setUser(stored ? JSON.parse(stored) : null);
         };
-
-        syncUser(); // читаем при монтировании
-
-        // слушаем кастомное событие при логине
+        syncUser();
         window.addEventListener('userChanged', syncUser);
-        // слушаем storage (если логин в другой вкладке)
         window.addEventListener('storage', syncUser);
-
         return () => {
             window.removeEventListener('userChanged', syncUser);
             window.removeEventListener('storage', syncUser);
@@ -33,25 +29,32 @@ export default function Navbar() {
 
     return (
         <nav className="navbar">
-            <a href="/" className="navbar-logo"> {/* ← было /frontend/public */}
+            <a href="/" className="navbar-logo">
                 <span className="logo-icon"></span> CINECLUB
             </a>
-            <div className="navbar-links">
-                <a href="/">Movies</a> {/* ← было /frontend/public */}
-                <a href="/clubs">Clubs</a>
-                <a href="/vote">Vote</a>
+
+            {/* Гамбургер кнопка */}
+            <button
+                className="navbar-burger"
+                onClick={() => setMenuOpen(v => !v)}
+                aria-label="Toggle menu"
+            >
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <div className={`navbar-links ${menuOpen ? 'navbar-links--open' : ''}`}>
+                <a href="/" onClick={() => setMenuOpen(false)}>Movies</a>
+                <a href="/clubs" onClick={() => setMenuOpen(false)}>Clubs</a>
+                <a href="/vote" onClick={() => setMenuOpen(false)}>Vote</a>
                 {user ? (
                     <>
-                        <a href="/profile">{user.username}</a>
-                        <button
-                            onClick={handleLogout}
-                            className="btn-logout">
-
-                            Logout
-                        </button>
+                        <a href="/profile" onClick={() => setMenuOpen(false)}>{user.username}</a>
+                        <button onClick={handleLogout} className="btn-logout">Logout</button>
                     </>
                 ) : (
-                    <a href="/login" className="btn-login">Sign in</a>
+                    <a href="/login" className="btn-login" onClick={() => setMenuOpen(false)}>Sign in</a>
                 )}
             </div>
         </nav>
