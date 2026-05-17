@@ -40,8 +40,10 @@ app.use("/api/users", userRoutes)
 app.use("/api/posts", postRoutes);
 
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
 
 module.exports = app
