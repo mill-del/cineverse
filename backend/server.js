@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const app = express();
 const http = require("http");
@@ -11,7 +12,6 @@ const voteRoutes = require("./src/routes/votes.routes");
 const userRoutes = require("./src/routes/users.routes");
 const { initVoteSocket } = require("./src/websocket/voteSocket");
 const uploadHandler = require("./src/routes/upload.routes");
-require('dotenv').config();
 const authMiddleware = require('./src/middleware/auth.middleware')
 const postRoutes = require("./src/routes/posts.routes");
 const cors = require('cors');
@@ -40,6 +40,10 @@ app.use("/api/users", userRoutes)
 app.use("/api/posts", postRoutes);
 
 
-server.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app
