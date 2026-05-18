@@ -26,11 +26,13 @@ initVoteSocket(server);
 app.use(express.json());
 
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'https://cineverse-c6woxzfdw-foreveruups-projects.vercel.app',
-    'https://cineverse-blush-tau.vercel.app'
-  ]
+  origin: (origin, callback) => {
+    if (!origin || origin.includes('vercel.app') || origin.includes('localhost')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
 }));
 
 app.use("/api/auth", authRoutes);
