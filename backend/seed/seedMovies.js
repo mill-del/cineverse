@@ -27,7 +27,6 @@ const seed = async () => {
 
     const movies = []
 
-    // Тянем 10 страниц по 20 фильмов = 200 фильмов
     for (let page = 1; page <= 10; page++) {
       const { data } = await axios.get(
           `https://api.themoviedb.org/3/movie/top_rated`,
@@ -41,7 +40,6 @@ const seed = async () => {
       )
 
       for (const m of data.results) {
-        // Подтягиваем детали фильма (там есть director и cast)
         const { data: details } = await axios.get(
             `https://api.themoviedb.org/3/movie/${m.id}/credits`,
             { params: { api_key: TMDB_KEY } }

@@ -78,7 +78,7 @@ Start the frontend:
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+Open https://cineverse-gx6v.onrender.com
 
 ## 📁 Project Structure
 
@@ -119,8 +119,8 @@ cineverse/
 
 ## 🌐 Deployment
 
-- **Frontend**: [Vercel](https://vercel.com)
-- **Backend**: [Render](https://render.com) — enable **WebSocket Support** in service settings
+- **Frontend**: [Vercel](cineverse-mu-khaki.vercel.app)
+- **Backend**: [Render](https://cineverse-gx6v.onrender.com)
 
 ## 🧪 Testing
 
