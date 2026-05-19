@@ -16,8 +16,6 @@ const authMiddleware = require('./src/middleware/auth.middleware')
 const postRoutes = require("./src/routes/posts.routes");
 const cors = require('cors');
 
-
-
 const PORT = process.env.PORT
 
 connectDB();

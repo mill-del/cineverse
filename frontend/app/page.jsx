@@ -27,7 +27,6 @@ export default function HomePage() {
             })
             .catch(() => setLoading(false));
 
-        // Получаем победителя голосования
         fetch(`${API_URL}/api/votes/current`)
             .then(r => r.json())
             .then(data => {
@@ -39,7 +38,6 @@ export default function HomePage() {
             })
             .catch(() => {});
 
-        // WebSocket для live updates
         try {
             const ws = new WebSocket(WS_URL);
             wsRef.current = ws;

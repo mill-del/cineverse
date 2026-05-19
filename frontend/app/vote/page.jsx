@@ -23,7 +23,6 @@ export default function VotePage() {
             .then(data => { if (data.results) setResults(data.results); })
             .catch(() => {});
 
-        // Получаем свой текущий голос
         if (token) {
             fetch(`${API_URL}/api/votes/my`, {
                 headers: { Authorization: `Bearer ${token}` }

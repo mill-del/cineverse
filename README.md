@@ -72,7 +72,7 @@ Create a `.env.local` file in `/frontend`:
 NEXT_PUBLIC_API_URL=http://localhost:8080
 ```
 
-Start the frontend:
+Start the frontend (local):
 
 ```bash
 npm run dev
@@ -119,8 +119,8 @@ cineverse/
 
 ## 🌐 Deployment
 
-- **Frontend**: [Vercel](cineverse-mu-khaki.vercel.app)
-- **Backend**: [Render](https://cineverse-gx6v.onrender.com)
+- **Frontend**: [cineverse-mu-khaki.vercel.app]
+- **Backend**: [https://cineverse-gx6v.onrender.com]
 
 ## 🧪 Testing
 

@@ -71,7 +71,6 @@ export default function EditProfilePage() {
             const data = await res.json();
             if (!res.ok) { setError(data.message || 'Failed to save'); return; }
 
-            // Если поменяли аватар — отдельный запрос
             if (form.avatar !== '') {
                 await fetch(`${API_URL}/api/users/me/avatar`, {
                     method: 'PUT',
@@ -83,7 +82,6 @@ export default function EditProfilePage() {
                 });
             }
 
-            // Обновляем user в localStorage
             const stored = JSON.parse(localStorage.getItem('user') || '{}');
             localStorage.setItem('user', JSON.stringify({ ...stored, username: form.username }));
             window.dispatchEvent(new Event('userChanged'));

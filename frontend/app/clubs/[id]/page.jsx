@@ -27,7 +27,6 @@ export default function ClubPage() {
     // Online users
     const [onlineUsers, setOnlineUsers] = useState([]);
 
-    // Edit/Delete/Movie picker
     const [showEdit, setShowEdit] = useState(false);
     const [editName, setEditName] = useState('');
     const [editDescription, setEditDescription] = useState('');
